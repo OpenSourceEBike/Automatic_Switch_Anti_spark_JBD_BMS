@@ -1,5 +1,6 @@
 # Automatic switch anti-spark for JBD BMS
-A modular DIY automatic switch anti-spark for JBD BMS.
+
+**What:** switches ON the popular JBD BMS, effectively switching ON the EBike/EScooter with a shaking/vibration. Avoids the need to install a mechanical switch and also adds a safe timeout for automatically switching OFF the EBike/EScooter.
 
 WORK IN PROGRESS, not finished yet!
 
@@ -9,7 +10,7 @@ WORK IN PROGRESS, not finished yet!
 * **Wireless communication with other boards (optional):** an EBike/EScooter main board can communicate by wireless and switch OFF immediatly the JBD BMS.
 * **Cheap and easy to DIY:** costs 5€ in materials and needs only soldering 8 wires
 
-Tecnhical notes:
+## Tecnhical notes ##
 * Hardware
     * very easy to DIY: only 8 wires to solder ([see the schematic](hardware/schematic.png))
     * [low power](https://learn.adafruit.com/deep-sleep-with-circuitpython/power-consumption): espected to use only 0.007 watts when JBD BMS is switched OFF (will take 8 years to discharge a 500Wh battery)
