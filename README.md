@@ -1,6 +1,6 @@
 # Automatic switch anti-spark for JBD BMS
 
-**What:** switches ON the popular JBD BMS, effectively switching ON the EBike/EScooter with a shaking/vibration. Avoids the need to install a mechanical switch and also adds a safe timeout for automatically switching OFF the EBike/EScooter.
+**What:** switches ON the [popular JBD BMS](https://jiabaidabms.com/), effectively switching ON the EBike/EScooter with a shaking/vibration. Avoids the need to install a mechanical switch and also adds a safe timeout for automatically switching OFF the EBike/EScooter.
 
 WORK IN PROGRESS, not finished yet!
 
