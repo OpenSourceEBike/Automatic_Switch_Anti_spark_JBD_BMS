@@ -17,7 +17,7 @@ timeout_minutes_to_disable_JBD_BMS = 20 # 20 minutes seems a good value
 # due to motion detection
 
 # enable the JBD BMS switch
-switch_pin_number = board.IO15
+switch_pin_number = board.IO33
 switch_pin = digitalio.DigitalInOut(switch_pin_number)
 switch_pin.direction = digitalio.Direction.OUTPUT
 # JBD BMS is enabled by pulling the switch pin to GND
