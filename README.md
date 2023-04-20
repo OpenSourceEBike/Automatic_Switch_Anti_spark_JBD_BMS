@@ -20,14 +20,23 @@ You will also need to buy the ADXL345 module board (I bought on Aliexpress).
 
 ### Install CircuitPyhton ###
 
-Download the archieved CircuitPyhton binary from [here](/circuitpython_binary). Connect the ESP32-S2 board in bootloader mode to your PC with a USB-C cable.
+Download the archieved CircuitPyhton binary from [here](/circuitpython_binary).<br>
 
+Connect the ESP32-S2 board in bootloader mode to your PC with a USB-C cable. On Linux I use this command to flash the CircuitPython:<br>
 
+```esptool.py write_flash 0 adafruit-circuitpython-lolin_s2_mini-en_US-8.1.0-beta.1.bin```
 
 <img src=hardware/schematic.png>
 
+[<img src=documentation/board_01.jpg width=400>](documentation/board_01.jpg)
 
+[<img src=documentation/board_02.jpg width=400>](documentation/board_02.jpg)
 
+[<img src=documentation/board_03.jpg width=400>](documentation/board_03.jpg)
+
+[<img src=documentation/board_04.jpg width=400>](documentation/board_04.jpg)
+
+[<img src=documentation/board_05.jpg width=400>](documentation/board_05.jpg)
 
 ## Technical notes ##
 * Hardware
