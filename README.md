@@ -2,14 +2,14 @@
 
 **What:** a small DIY board that automatically switches ON the [popular JBD BMS](https://jiabaidabms.com/), effectively switching ON the EBike/EScooter, when there is motion / vibration. Automatically switches OFF the BMS after a timeout without motion, like 20 minutes (configured).<br>
 
-Avoids the need to install a mechanical switch and also adds the safe timeout that automatically switchs OFF the EBike/EScooter.
+Avoids the need to install a mechanical switch and also adds the safe timeout that automatically switches OFF the EBike/EScooter.
 
 On the next picture, the green board is the JBD BMS and the other small purple and blue board, is the DIY automatic switch board:<br>
 [<img src=documentation/board_05.jpg width=400>](documentation/board_05.jpg)
 
 ## Features ##
-* **Switch ON the EBike/EScooter by shaking:** JBD BMS switchs ON when there is motion of the EBike/EScooter.
-* **Automatic switch OFF the EBike/EScooter:** JBD BMS switchs OFF after a custom timeout like 30 minutes, when there is no more motion.
+* **Switches ON the EBike/EScooter by detection motion:** JBD BMS switches ON when there is motion of the EBike/EScooter.
+* **Automatic switches OFF the EBike/EScooter:** JBD BMS switches OFF after a custom timeout like 30 minutes, when there is no more motion.
 * **[Ultra low power](https://learn.adafruit.com/deep-sleep-with-circuitpython/power-consumption):** espected to use only 0.007 watts when JBD BMS is switched OFF (will take 8 years to discharge a 500Wh battery).
 * **Cheap and easy to DIY:** costs 5€ in materials and needs only soldering 8 wires.
 * **Wireless communication with other boards (planned, optional):** an EBike/EScooter main board can communicate by wireless and switch OFF immediatly the JBD BMS.
@@ -74,7 +74,7 @@ NOTE: you can use the JBD BMS app to see the switch state. You will need to enab
 
 Finally, use some good tape to cover all the board.
 
-## Undertand the firmware (optional) ##
+## Understand the firmware (optional) ##
 
 The firmware is on the following files:
 * main.py
@@ -91,7 +91,7 @@ The main firmware:
 * A PinAlarm is created, this will wakeup the ESP32-S2 everytime the ADXL345 INT1 pin changes.
 * The code inside the while True will run continuously until the timeout happens (no motion detected during timeout_minutes_to_disable_JBD_BMS minutes) and wake up the ESP32-S2 from the light sleep mode.
   * There are 2 alarms here that will wake up the ESP32-S2: alarm to detect motion and timeout alarm. If the motion alarm wakes up the ESP32-S2, the timeout will be restarted. When the timeout alarm happens, the while True loop is stopped with the break.
-* Next code runs because the timeout did happen, so the code switchs off the BMS by turning the switch pin to logic 1 / 3.3 volts.
+* Next code runs because the timeout did happen, so the code switches off the BMS by turning the switch pin to logic 1 / 3.3 volts.
 * Finally, ESP32-S2 enters in deep sleep mode (ultra low power), keeping the switch pin in the state to keep the BMS switched off. The motion alarm will be active meaning the ESP32-S2 will then wake up when detection motion, and the firmware will run again starting from the begin.
 
 Planned: use [ESPNow low power wireless communication](https://docs.circuitpython.org/en/latest/shared-bindings/espnow/index.html) to communicate with the EBike/EScooter board by wireless, that will be able to switch OFF immediatly the JBD BMS.
