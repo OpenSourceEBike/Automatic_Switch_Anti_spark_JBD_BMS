@@ -4,8 +4,6 @@
 
 Avoids the need to install a mechanical switch and also adds the safe timeout that automatically switchs OFF the EBike/EScooter.
 
-Very easy to DIY: only 8 wires to solder ([see the schematic](hardware/schematic.png)).<br>
-
 On the next picture, the green board is the JBD BMS and the other small purple and blue board, is the DIY automatic switch board:<br>
 [<img src=documentation/board_05.jpg width=400>](documentation/board_05.jpg)
 
