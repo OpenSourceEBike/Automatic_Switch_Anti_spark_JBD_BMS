@@ -7,16 +7,21 @@ switch_pin = digitalio.DigitalInOut(switch_pin_number)
 switch_pin.direction = digitalio.Direction.OUTPUT
 switch_pin.value = True
 
+import supervisor
+supervisor.runtime.autoreload = False
+
 import busio
 import adafruit_adxl34x
 import alarm
 import time
 import ulab
+import espnow_display
+import system_data
 
 ################################################################
 # CONFIGURATIONS
 
-timeout_minutes_to_disable_JBD_BMS = 20 # 20 minutes seems a good value
+timeout_minutes_to_disable_relay = 20 # 20 minutes seems a good value
 
 ################################################################
 
@@ -54,6 +59,9 @@ for i in range(time_array_lenght):
   play_sequence[i] = [time_on_array[i], time_off_array[i]]
 buzzer_play(play_sequence)
 
+system_data = system_data.SystemData()
+espnow_display = espnow_display.Display(system_data)
+
 # pins used by the ADXL345
 scl_pin = board.IO1
 sda_pin = board.IO2
@@ -68,21 +76,42 @@ accelerometer._read_clear_interrupt_source() # need to clear the interrupt
 # pin change alarm, will be active when motion is detected by the ADXL345
 pin_alarm_motion_detection = alarm.pin.PinAlarm(int1_pin, value = True)
 
+previous_display_communication_counter = 0
+last_time_reset = time.monotonic()
+
 while True:
-  # calculate next timeout alarm
-  next_time_to_timeout = time.monotonic() + (timeout_minutes_to_disable_JBD_BMS * 60)
-  timeout_alarm = alarm.time.TimeAlarm(monotonic_time = next_time_to_timeout)
+  espnow_display.process_data()
 
-  # enter deep sleep and will wakeup only with movement detection or on the timeout
-  wakeup_reason = alarm.light_sleep_until_alarms(pin_alarm_motion_detection, timeout_alarm)
-  accelerometer._read_clear_interrupt_source() # need to clear the interrupt
+  if system_data.display_communication_counter != previous_display_communication_counter:
+    previous_display_communication_counter = system_data.display_communication_counter
+    
+    # received data from the display, so update the last_time_reset
+    last_time_reset = time.monotonic()
 
-  if wakeup_reason == timeout_alarm:
-    # we just timeout, so leave this while True loop
+  if system_data.turn_off_relay:
     break
 
+  # check for timeout
+  if (time.monotonic() - last_time_reset) > (timeout_minutes_to_disable_relay * 60):
+    break
+
+  time.sleep(0.1)
+
+# while True:
+#   # calculate next timeout alarm
+#   next_time_to_timeout = time.monotonic() + (timeout_minutes_to_disable_relay * 60)
+#   timeout_alarm = alarm.time.TimeAlarm(monotonic_time = next_time_to_timeout)
+
+#   # enter deep sleep and will wakeup only with movement detection or on the timeout
+#   wakeup_reason = alarm.light_sleep_until_alarms(pin_alarm_motion_detection, timeout_alarm)
+#   accelerometer._read_clear_interrupt_source() # need to clear the interrupt
+
+#   if wakeup_reason == timeout_alarm:
+#     # we just timeout, so leave this while True loop
+#     break
+
 # if we are here, we did timeout
-# disable JBD BMS switch pin
+# disable relay switch pin
 switch_pin.value = False
 
 # play the disable relay sequence sound
@@ -96,5 +125,8 @@ buzzer_play(play_sequence)
 
 # now enter in deep sleep
 # preserve the switch pin state, which is disable
-alarm.exit_and_deep_sleep_until_alarms(pin_alarm_motion_detection, preserve_dios = [switch_pin])
+pins_to_preserve = [switch_pin]
+for pin in buzzer_pins:
+  pins_to_preserve.append(pin)
+alarm.exit_and_deep_sleep_until_alarms(pin_alarm_motion_detection, preserve_dios = pins_to_preserve)
 # Does not return. Exits, and restarts after the deep sleep time.
