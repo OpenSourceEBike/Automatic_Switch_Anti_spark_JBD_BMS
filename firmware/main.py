@@ -1,12 +1,17 @@
-import supervisor
-supervisor.runtime.autoreload = False # disable CircuitPython auto-reload
-
 import board
+import digitalio
+
+# enable the relay as soon as possible
+switch_pin_number = board.IO33
+switch_pin = digitalio.DigitalInOut(switch_pin_number)
+switch_pin.direction = digitalio.Direction.OUTPUT
+switch_pin.value = True
+
 import busio
 import adafruit_adxl34x
 import alarm
-import digitalio
 import time
+import ulab
 
 ################################################################
 # CONFIGURATIONS
@@ -19,13 +24,35 @@ timeout_minutes_to_disable_JBD_BMS = 20 # 20 minutes seems a good value
 # the system just wake up from deep sleep,
 # due to motion detection
 
-# enable the JBD BMS switch
-switch_pin_number = board.IO33
-switch_pin = digitalio.DigitalInOut(switch_pin_number)
-switch_pin.direction = digitalio.Direction.OUTPUT
+def buzzer_set_state(state):
+  for index in range(len(buzzer_pins)):
+    buzzer_pins[index].value = state
 
-# JBD BMS is enabled by pulling the switch pin to GND
-switch_pin.value = False
+def buzzer_play(sequence):
+  for delay_time in sequence:
+    buzzer_set_state(True)
+    time.sleep(delay_time[0])
+    buzzer_set_state(False)
+    time.sleep(delay_time[1])
+
+# enable the IO pins to control the buzzer
+# needs a few pins as the buzzer uses about 20mA
+buzzer_pins_numbers = [board.IO3, board.IO5, board.IO7, board.IO9, board.IO11, board.IO12]
+buzzer_pins = [0] * len(buzzer_pins_numbers)
+
+# configure the pins as outputs
+for index, buzzer_pin_number in enumerate(buzzer_pins_numbers):
+  buzzer_pins[index] = digitalio.DigitalInOut(buzzer_pin_number)
+  buzzer_pins[index].direction = digitalio.Direction.OUTPUT
+
+# play the enable relay sequence sound
+time_array_lenght = 10
+time_on_array = ulab.numpy.linspace(0.005, 0.05, time_array_lenght)
+time_off_array = ulab.numpy.linspace(0.05, 0.0005, time_array_lenght)
+play_sequence = [[0,0]] * time_array_lenght
+for i in range(time_array_lenght):
+  play_sequence[i] = [time_on_array[i], time_off_array[i]]
+buzzer_play(play_sequence)
 
 # pins used by the ADXL345
 scl_pin = board.IO1
@@ -53,13 +80,21 @@ while True:
   if wakeup_reason == timeout_alarm:
     # we just timeout, so leave this while True loop
     break
-  
+
 # if we are here, we did timeout
 # disable JBD BMS switch pin
-switch_pin.value = True
+switch_pin.value = False
+
+# play the disable relay sequence sound
+time_array_lenght = 10
+time_on_array = ulab.numpy.linspace(0.005, 0.0005, time_array_lenght)
+time_off_array = ulab.numpy.linspace(0.001, 0.1, time_array_lenght)
+play_sequence = [[0,0]] * time_array_lenght
+for i in range(time_array_lenght):
+  play_sequence[i] = [time_on_array[i], time_off_array[i]]
+buzzer_play(play_sequence)
 
 # now enter in deep sleep
 # preserve the switch pin state, which is disable
 alarm.exit_and_deep_sleep_until_alarms(pin_alarm_motion_detection, preserve_dios = [switch_pin])
 # Does not return. Exits, and restarts after the deep sleep time.
-
