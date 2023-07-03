@@ -32,8 +32,6 @@ seconds_to_wait_before_movement_detection = 20 # 20 seconds seems a good value
 
 my_mac_address = [0x68, 0xb6, 0xb3, 0x01, 0xf7, 0xf1]
 
-debug_enable = True
-
 ################################################################
 
 timeout_no_motion_minutes_to_disable_relay *= 60 # need to multiply by 60 seconds
@@ -41,9 +39,8 @@ timeout_no_motion_minutes_to_disable_relay *= 60 # need to multiply by 60 second
 # if we are here, is because
 # the system just wake up from deep sleep,
 # due to motion detection
-
 system_data = system_data.SystemData()
-espnow_comms = espnow_comms.ESPNowComms(my_mac_address, system_data, debug_enable)
+espnow_comms = espnow_comms.ESPNowComms(my_mac_address, system_data)
 
 # pins used by the ADXL345
 scl_pin = board.IO1
@@ -58,32 +55,27 @@ accelerometer.events.get('motion') # this will clear the interrupt
 
 last_time_reset = time.monotonic()
 
-if debug_enable:
-  motion_counter = 0
-
 while True:
-  espnow_comms.process_data()
-
   # if motion is detected, reset the timeout counter
   if accelerometer.events.get('motion'):
     last_time_reset = time.monotonic()
-    
-    if debug_enable:
-      motion_counter += 1
-      print(f"motion counter: {motion_counter}")
 
-  # if we should turn off the relay, leave this infinite loop
-  if system_data.turn_off_relay:
+  # if timeout, no motion was detected in last 2 minutes,
+  # we should turn off the relay, so leave this infinite loop
+  if (time.monotonic() - last_time_reset) > timeout_no_motion_minutes_to_disable_relay:
     break
 
-  # if timeout, leave this infinite loop
-  if (time.monotonic() - last_time_reset) > timeout_no_motion_minutes_to_disable_relay:
+  # check if we received the command to turn off the relay (by wireless communications)
+  # will update the system_data.turn_off_relay
+  espnow_comms.process_data()
+  # if we should turn off the relay, leave this infinite loop
+  if system_data.turn_off_relay:
     break
 
   # do memory clean
   gc.collect()
 
-  # sleep some very little time
+  # sleep some very little time before do everything again
   time.sleep(0.02)
 
 # if we are here, we should turn off the relay
