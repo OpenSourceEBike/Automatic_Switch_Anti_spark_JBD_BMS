@@ -85,12 +85,7 @@ Finally, use some good tape to cover all the board.
 
 ## Understand the firmware (optional) ##
 
-The firmware is on the following files:
-* main.py
-* safemode.py
-* lib folder
-
-The main firmware is on the main.py file. The safemode.py code is run if eventiually the Pyhton enters in safemode, and that will reboot the board to the regular mode.
+The main firmware is on the main.py file. espnow_comms.py file has the code to received by wireless (for instance, sent by a display) a command to turn off the BMS.
 
 The lib folder has the needed Pyhton libraries, like the adafruit_adxl34x that communicates with the ADXL345 module.
 
