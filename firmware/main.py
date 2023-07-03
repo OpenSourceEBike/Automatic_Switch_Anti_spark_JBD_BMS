@@ -32,7 +32,7 @@ seconds_to_wait_before_movement_detection = 20 # 20 seconds seems a good value
 
 my_mac_address = [0x68, 0xb6, 0xb3, 0x01, 0xf7, 0xf1]
 
-debug_enable = False
+debug_enable = True
 
 ################################################################
 
