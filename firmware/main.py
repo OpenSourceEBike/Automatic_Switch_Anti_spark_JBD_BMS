@@ -20,27 +20,44 @@ import adafruit_adxl34x
 import alarm
 import time
 import gc
-import espnow_comms
-import system_data
+import wifi
+import espnow
+import espnow_comms as _ESPNowComms
+import system_data as _SystemData
 
 ################################################################
 # CONFIGURATIONS
 
-timeout_no_motion_minutes_to_disable_relay = 2 # 2 minutes seems a good value
+timeout_no_motion_minutes_to_disable_relay = 5 # 5 minutes seems a good value
 
 seconds_to_wait_before_movement_detection = 20 # 20 seconds seems a good value
 
 my_mac_address = [0x68, 0xb6, 0xb3, 0x01, 0xf7, 0xf1]
 
+debug_enable = True
+
 ################################################################
 
 timeout_no_motion_minutes_to_disable_relay *= 60 # need to multiply by 60 seconds
 
+if debug_enable:
+  print("Starting the DIY Automatic Anti Spark Switch")
+
 # if we are here, is because
 # the system just wake up from deep sleep,
 # due to motion detection
-system_data = system_data.SystemData()
-espnow_comms = espnow_comms.ESPNowComms(my_mac_address, system_data)
+
+system_data = _SystemData.SystemData()
+
+# set mac address
+# this is also need to start ESPNow
+wifi.radio.enabled = True
+wifi.radio.mac_address = bytearray(my_mac_address)
+wifi.radio.start_ap(ssid="NO_SSID", channel=1)
+wifi.radio.stop_ap()
+
+_espnow = espnow.ESPNow()
+espnow_comms = _ESPNowComms.ESPNowComms(_espnow, system_data)
 
 # pins used by the ADXL345
 scl_pin = board.IO1
@@ -50,33 +67,51 @@ int1_pin = board.IO8
 # init the ADXL345
 i2c = busio.I2C(scl_pin, sda_pin)
 accelerometer = adafruit_adxl34x.ADXL345(i2c)
-accelerometer.enable_motion_detection(threshold = 18) # 18 seems a good value
+accelerometer.enable_motion_detection(threshold = 19) # 19 seems a good value
 accelerometer.events.get('motion') # this will clear the interrupt
 
-last_time_reset = time.monotonic()
+last_time_motion_detected = time.monotonic()
+
+if debug_enable:
+  motion_counter = 0
+  previous_display_communication_counter = 0
 
 while True:
-  # if motion is detected, reset the timeout counter
-  if accelerometer.events.get('motion'):
-    last_time_reset = time.monotonic()
-
-  # if timeout, no motion was detected in last 2 minutes,
-  # we should turn off the relay, so leave this infinite loop
-  if (time.monotonic() - last_time_reset) > timeout_no_motion_minutes_to_disable_relay:
-    break
-
-  # check if we received the command to turn off the relay (by wireless communications)
-  # will update the system_data.turn_off_relay
+  
+  # process any data received by ESPNow
   espnow_comms.process_data()
+  if debug_enable:
+    if system_data.display_communication_counter != previous_display_communication_counter:
+      previous_display_communication_counter = system_data.display_communication_counter
+
+  # save time value when motion is detected 
+  if accelerometer.events.get('motion'):
+    last_time_motion_detected = time.monotonic()
+    
+    if debug_enable:
+      motion_counter += 1
+      print(f"motion counter: {motion_counter}")
+
   # if we should turn off the relay, leave this infinite loop
   if system_data.turn_off_relay:
+    if debug_enable:
+      print("Turn off relay command")
+      
+    break
+
+  # if timeout, leave this infinite loop
+  if (time.monotonic() - last_time_motion_detected) > timeout_no_motion_minutes_to_disable_relay:    
     break
 
   # do memory clean
   gc.collect()
 
-  # sleep some very little time before do everything again
+  # sleep some very little time
   time.sleep(0.02)
+
+
+if debug_enable:
+  print("Enter in sleep mode")
 
 # if we are here, we should turn off the relay
 # disable relay switch pins
