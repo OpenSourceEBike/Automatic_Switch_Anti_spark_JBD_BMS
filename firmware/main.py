@@ -67,7 +67,7 @@ int1_pin = board.IO8
 # init the ADXL345
 i2c = busio.I2C(scl_pin, sda_pin)
 accelerometer = adafruit_adxl34x.ADXL345(i2c)
-accelerometer.enable_motion_detection(threshold = 19) # 19 seems a good value
+accelerometer.enable_motion_detection(threshold = 16) # 16 seems to be the min value possible
 accelerometer.events.get('motion') # this will clear the interrupt
 
 last_time_motion_detected = time.monotonic()
@@ -75,6 +75,7 @@ last_time_motion_detected = time.monotonic()
 if debug_enable:
   motion_counter = 0
   previous_display_communication_counter = 0
+  timeout_counter_previous = 0
 
 while True:
   
@@ -90,7 +91,7 @@ while True:
     
     if debug_enable:
       motion_counter += 1
-      print(f"motion counter: {motion_counter}")
+      print(f"Motion counter: {motion_counter}")
 
   # if we should turn off the relay, leave this infinite loop
   if system_data.turn_off_relay:
@@ -100,9 +101,15 @@ while True:
     break
 
   # if timeout, leave this infinite loop
-  if (time.monotonic() - last_time_motion_detected) > timeout_no_motion_minutes_to_disable_relay:    
+  timeout_counter = int(time.monotonic() - last_time_motion_detected)
+  if timeout_counter > timeout_no_motion_minutes_to_disable_relay:
     break
-
+  
+  if debug_enable:
+    if timeout_counter != timeout_counter_previous:
+      timeout_counter_previous = timeout_counter
+      print(f"Timeout remaining seconds: {timeout_no_motion_minutes_to_disable_relay - timeout_counter}")
+  
   # do memory clean
   gc.collect()
 
@@ -111,7 +118,7 @@ while True:
 
 
 if debug_enable:
-  print("Enter in sleep mode")
+  print(f"Prepare to enter in sleep mode - delay of {seconds_to_wait_before_movement_detection} seconds")
 
 # if we are here, we should turn off the relay
 # disable relay switch pins
@@ -125,5 +132,10 @@ time.sleep(seconds_to_wait_before_movement_detection)
 pin_alarm_motion_detection = alarm.pin.PinAlarm(int1_pin, value = True)
 
 accelerometer.events.get('motion') # this will clear the interrupt
+
+if debug_enable:
+  print("Enter in sleep mode")
+
 alarm.exit_and_deep_sleep_until_alarms(pin_alarm_motion_detection, preserve_dios = switch_pins)
 # Does not return. Exits, and restarts after the deep sleep time.
+
